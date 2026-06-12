@@ -336,6 +336,16 @@ pub struct ServerSettings {
         alias = "shutdown_delay_seconds"
     )]
     pub runtime_shutdown_timeout_seconds: u16,
+    #[serde(default)]
+    pub user_agent: UserAgentSettings,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct UserAgentSettings {
+    #[serde(default)]
+    pub user_agent_patterns: Vec<String>,
+    #[serde(default)]
+    pub unknown_user_agent_sample_rate: f64,
 }
 
 fn default_connection_close_timeout() -> u16 {

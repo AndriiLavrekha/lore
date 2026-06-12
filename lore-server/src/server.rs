@@ -44,6 +44,7 @@ use lore_storage::compress::COMPRESSION_MODE;
 use lore_storage::hash::StringHash;
 use lore_storage::local::immutable_store::ImmutableStoreCreateOptions;
 use lore_telemetry::execution_state::ServerExecutionState;
+use lore_telemetry::user_agent_filter::UserAgentFilter;
 use lore_transport::grpc::set_user_agent;
 use lore_transport::quic::client;
 use lore_transport::quic::client::ClientCerts;
@@ -416,6 +417,7 @@ async fn launch_grpc_server(
     notification_sender: Arc<dyn NotificationSender>,
     notification_service: Option<NotificationService>,
     hook_dispatcher: Arc<HookDispatcher>,
+    user_agent_filter: Arc<UserAgentFilter>,
     mut shutdown_rx: tokio::sync::watch::Receiver<bool>,
 ) -> Result<()> {
     let grpc_settings = settings
@@ -486,6 +488,7 @@ async fn launch_grpc_server(
                 .map(Duration::from_secs),
             Duration::from_secs(grpc_settings.request_handler_timeout_seconds),
             service_settings,
+            user_agent_filter,
         )
         .with_jwt_verifier(jwt_verifier)?
         .serve(addr, async move {
@@ -546,6 +549,7 @@ fn validate_endpoint_security(
 
 async fn launch_replication_grpc_server(
     settings: Settings,
+    user_agent_filter: Arc<UserAgentFilter>,
     mut shutdown_rx: tokio::sync::watch::Receiver<bool>,
 ) -> Result<()> {
     let grpc_settings = settings
@@ -581,6 +585,7 @@ async fn launch_replication_grpc_server(
             grpc_settings
                 .http2_keepalive_timeout_seconds
                 .map(Duration::from_secs),
+            user_agent_filter,
         )?
         .serve(addr, async move {
             let _ = shutdown_rx.wait_for(|&v| v).await;
@@ -1554,6 +1559,12 @@ async fn async_main(settings: (Settings, StringHash), config: ServerConfig) -> R
     let runtime = runtime();
     let telemetry = settings.telemetry.clone().unwrap_or_default();
     let metrics_config = telemetry.metrics.clone().unwrap_or_default();
+    let ua = &settings.server.user_agent;
+    let user_agent_filter = Arc::new(
+        UserAgentFilter::new(&ua.user_agent_patterns)
+            .map_err(|e| anyhow::anyhow!("Invalid user_agent_patterns: {e}"))?
+            .with_unknown_sample_rate(ua.unknown_user_agent_sample_rate),
+    );
 
     // Initialize the plugin registry before telemetry: start with the
     // pre-populated registry from config, then register any build.rs-discovered
@@ -1765,6 +1776,7 @@ async fn async_main(settings: (Settings, StringHash), config: ServerConfig) -> R
             let jwt_verifier = jwt_verifier.clone();
             let settings = settings.clone();
             let notification = notification.clone();
+            let user_agent_filter = user_agent_filter.clone();
             let shutdown_rx = _shutdown_rx.clone();
 
             let local_immutable_store = local_store().unwrap_or_else(|| {
@@ -1782,6 +1794,7 @@ async fn async_main(settings: (Settings, StringHash), config: ServerConfig) -> R
                 notification,
                 notification_service,
                 hook_dispatcher,
+                user_agent_filter,
                 shutdown_rx,
             )
         });
@@ -1810,8 +1823,9 @@ async fn async_main(settings: (Settings, StringHash), config: ServerConfig) -> R
         }
         lore_spawn!(endpoints, {
             let settings = settings.clone();
+            let user_agent_filter = user_agent_filter.clone();
             let shutdown_rx = _shutdown_rx.clone();
-            launch_replication_grpc_server(settings, shutdown_rx)
+            launch_replication_grpc_server(settings, user_agent_filter, shutdown_rx)
         });
     }
 
@@ -1950,6 +1964,7 @@ async fn async_main(settings: (Settings, StringHash), config: ServerConfig) -> R
                     default_ttl_seconds: http_settings.presigned_url_default_ttl_seconds,
                     max_ttl_seconds: http_settings.presigned_url_max_ttl_seconds,
                 },
+                user_agent_filter: user_agent_filter.clone(),
             };
             let immutable_store = immutable_store.clone();
             let mutable_store = mutable_store.clone();
@@ -1972,8 +1987,9 @@ async fn async_main(settings: (Settings, StringHash), config: ServerConfig) -> R
         lore_spawn!(endpoints, {
             let host = http_settings.host.clone();
             let port = http_settings.port;
+            let user_agent_filter = user_agent_filter.clone();
             let shutdown_rx = _shutdown_rx.clone();
-            LoreHttpServer::serve_maintenance(host, port, async move {
+            LoreHttpServer::serve_maintenance(host, port, user_agent_filter, async move {
                 let _ = shutdown_rx.clone().wait_for(|&v| v).await;
             })
         });

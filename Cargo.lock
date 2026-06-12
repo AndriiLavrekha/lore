@@ -2863,6 +2863,8 @@ dependencies = [
  "opentelemetry-semantic-conventions",
  "opentelemetry_sdk",
  "pin-project",
+ "rand",
+ "regex",
  "serde",
  "smallvec",
  "thiserror 2.0.18",

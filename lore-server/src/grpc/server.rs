@@ -23,6 +23,7 @@ use lore_revision::notification::NotificationSender;
 use lore_storage::ImmutableStore;
 use lore_storage::MutableStore;
 use lore_telemetry::grpc_tower_layer::GrpcMetricsLayer;
+use lore_telemetry::user_agent_filter::UserAgentFilter;
 use serde::Deserialize;
 use tonic::transport::Identity;
 use tonic::transport::ServerTlsConfig;
@@ -429,6 +430,7 @@ impl GrpcServerBuilder<WantsHttp2Config> {
         http2_keep_alive_timeout: Option<Duration>,
         request_handler_timeout: Duration,
         service_settings: Option<GrpcPublicServicesSettings>,
+        user_agent_filter: Arc<UserAgentFilter>,
     ) -> GrpcServerBuilder<MaybeJwtVerifier> {
         GrpcServerBuilder(MaybeJwtVerifier {
             environment: self.0.environment,
@@ -446,6 +448,7 @@ impl GrpcServerBuilder<WantsHttp2Config> {
             http2_keep_alive_timeout,
             request_handler_timeout,
             service_settings,
+            user_agent_filter,
         })
     }
 }
@@ -466,6 +469,7 @@ pub struct MaybeJwtVerifier {
     http2_keep_alive_timeout: Option<Duration>,
     request_handler_timeout: Duration,
     service_settings: Option<GrpcPublicServicesSettings>,
+    user_agent_filter: Arc<UserAgentFilter>,
 }
 
 impl GrpcServerBuilder<MaybeJwtVerifier> {
@@ -560,7 +564,8 @@ impl GrpcServerBuilder<MaybeJwtVerifier> {
             }
             None => None,
         };
-        let metrics_layer = tower::ServiceBuilder::new().layer(GrpcMetricsLayer::new());
+        let metrics_layer =
+            tower::ServiceBuilder::new().layer(GrpcMetricsLayer::new(self.0.user_agent_filter));
         let mut server = Server::builder()
             .http2_keepalive_interval(self.0.http2_keep_alive_interval)
             .http2_keepalive_timeout(self.0.http2_keep_alive_timeout);

@@ -8,6 +8,7 @@ pub mod grpc_metrics;
 pub mod grpc_tower_layer;
 pub mod http_metrics;
 pub mod http_tower_layer;
+pub mod user_agent_filter;
 
 use std::sync::Arc;
 use std::sync::LazyLock;
@@ -21,6 +22,7 @@ use tracing::debug;
 use tracing::error;
 
 pub(crate) static USER_AGENT_NONE: LazyLock<Arc<str>> = LazyLock::new(|| Arc::from("<none>"));
+pub(crate) static USER_AGENT_UNKNOWN: LazyLock<Arc<str>> = LazyLock::new(|| Arc::from("<unknown>"));
 
 static METER_PROVIDER: OnceLock<RwLock<Arc<SdkMeterProvider>>> = OnceLock::new();
 

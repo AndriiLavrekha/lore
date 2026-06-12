@@ -10,6 +10,7 @@ use anyhow::anyhow;
 use lore_proto::rpc::replication_service_server::ReplicationServiceServer;
 use lore_storage::ImmutableStore;
 use lore_telemetry::grpc_tower_layer::GrpcMetricsLayer;
+use lore_telemetry::user_agent_filter::UserAgentFilter;
 use tonic::transport::Certificate;
 use tonic::transport::Identity;
 use tonic::transport::Server;
@@ -136,8 +137,10 @@ impl GrpcReplicationServerBuilder<WantsHttp2Config> {
         self,
         http2_keep_alive_interval: Option<Duration>,
         http2_keep_alive_timeout: Option<Duration>,
+        user_agent_filter: Arc<UserAgentFilter>,
     ) -> anyhow::Result<GrpcReplicationServerBuilder<WantsAddress>> {
-        let metrics_layer = tower::ServiceBuilder::new().layer(GrpcMetricsLayer::new());
+        let metrics_layer =
+            tower::ServiceBuilder::new().layer(GrpcMetricsLayer::new(user_agent_filter));
         let mut server = Server::builder()
             .http2_keepalive_interval(http2_keep_alive_interval)
             .http2_keepalive_timeout(http2_keep_alive_timeout);

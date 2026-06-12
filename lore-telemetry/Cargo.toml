@@ -13,6 +13,8 @@ opentelemetry = { workspace = true }
 opentelemetry-semantic-conventions = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 pin-project = { workspace = true }
+rand = { workspace = true }
+regex = { workspace = true }
 serde = { workspace = true }
 smallvec = { workspace = true }
 thiserror = { workspace = true }

@@ -19,6 +19,7 @@ use axum::routing;
 use blake3;
 use hex;
 use lore_telemetry::http_tower_layer::HttpMetricsLayer;
+use lore_telemetry::user_agent_filter::UserAgentFilter;
 use ring::hmac;
 use tokio::net::TcpListener;
 use tracing::info;
@@ -95,6 +96,8 @@ pub struct LoreHttpServerSettings {
     pub available_timeout_seconds: u64,
     pub store_health_check: bool,
     pub presign: PresignSettings,
+    /// User-agent filter applied to HTTP metrics labels.
+    pub user_agent_filter: Arc<UserAgentFilter>,
 }
 
 // Expose a testable router factory
@@ -143,7 +146,7 @@ pub fn create_router(
     router
         .layer(middleware::from_fn(lore_http_tracing))
         .layer(CorrelationIdLayerBuilder::new().with_http_tracer().build())
-        .layer(HttpMetricsLayer::new())
+        .layer(HttpMetricsLayer::new(settings.user_agent_filter.clone()))
 }
 
 fn build_presign_config(settings: &PresignSettings) -> Result<Option<PresignConfig>> {
@@ -182,6 +185,7 @@ impl LoreHttpServer {
     pub async fn serve_maintenance(
         host: String,
         port: i32,
+        user_agent_filter: Arc<UserAgentFilter>,
         signal: impl Future<Output = ()> + Send + 'static,
     ) -> Result<()> {
         let addr = SocketAddr::from_str(format!("{host}:{port}").as_str())
@@ -200,7 +204,7 @@ impl LoreHttpServer {
                 "/health_check",
                 routing::get(health_check::handler).with_state(health),
             )
-            .layer(HttpMetricsLayer::new());
+            .layer(HttpMetricsLayer::new(user_agent_filter));
 
         let listener = TcpListener::bind(addr)
             .await

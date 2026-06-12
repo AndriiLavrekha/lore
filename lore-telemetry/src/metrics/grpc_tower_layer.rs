@@ -7,7 +7,6 @@ use std::task::Context;
 use std::task::Poll;
 use std::time::Instant;
 
-use http::HeaderValue;
 use http::Request;
 use http::Response;
 use http::header::USER_AGENT;
@@ -18,7 +17,10 @@ use tower::Layer;
 use tower::Service;
 
 use super::USER_AGENT_NONE;
+use super::USER_AGENT_UNKNOWN;
 use super::grpc_metrics::GrpcRequestMetrics;
+use super::user_agent_filter::NormalizeOutput;
+use super::user_agent_filter::UserAgentFilter;
 
 const GRPC_STATUS_HEADER: &str = "grpc-status";
 
@@ -29,16 +31,21 @@ const GRPC_STATUS_HEADER: &str = "grpc-status";
 ///
 /// Example
 /// ```
-/// let metrics_layer = lore_telemetry::grpc_tower_layer::GrpcMetricsLayer::new();
+/// use std::sync::Arc;
+/// use lore_telemetry::user_agent_filter::UserAgentFilter;
+/// let filter = Arc::new(UserAgentFilter::default());
+/// let metrics_layer = lore_telemetry::grpc_tower_layer::GrpcMetricsLayer::new(filter);
 /// let tower_layer = tower::ServiceBuilder::new().layer(metrics_layer);
 /// let mut server = tonic::transport::Server::builder().layer(tower_layer);
 /// ```
-#[derive(Clone, Default)]
-pub struct GrpcMetricsLayer {}
+#[derive(Clone)]
+pub struct GrpcMetricsLayer {
+    filter: Arc<UserAgentFilter>,
+}
 
 impl GrpcMetricsLayer {
-    pub fn new() -> Self {
-        Default::default()
+    pub fn new(filter: Arc<UserAgentFilter>) -> Self {
+        Self { filter }
     }
 }
 
@@ -46,7 +53,10 @@ impl<S> Layer<S> for GrpcMetricsLayer {
     type Service = GrpcMetricsService<S>;
 
     fn layer(&self, inner: S) -> Self::Service {
-        GrpcMetricsService { service: inner }
+        GrpcMetricsService {
+            service: inner,
+            filter: self.filter.clone(),
+        }
     }
 }
 
@@ -54,6 +64,7 @@ impl<S> Layer<S> for GrpcMetricsLayer {
 #[derive(Clone)]
 pub struct GrpcMetricsService<S> {
     service: S,
+    filter: Arc<UserAgentFilter>,
 }
 
 impl<S, B, C> Service<Request<B>> for GrpcMetricsService<S>
@@ -72,12 +83,16 @@ where
         let method = req.method().to_string();
         let path = req.uri().path().to_owned();
 
-        let user_agent = req
-            .headers()
-            .get(USER_AGENT)
-            .map(HeaderValue::to_str)
-            .and_then(Result::ok)
-            .map_or(USER_AGENT_NONE.clone(), Arc::from);
+        let user_agent = match req.headers().get(USER_AGENT).and_then(|v| v.to_str().ok()) {
+            Some(v) => match self.filter.normalize(v) {
+                NormalizeOutput::KnownAgent(label) => label,
+                NormalizeOutput::Unknown => {
+                    self.filter.sample_unknown_agent(v);
+                    USER_AGENT_UNKNOWN.clone()
+                }
+            },
+            None => USER_AGENT_NONE.clone(),
+        };
 
         let f = self.service.call(req);
 

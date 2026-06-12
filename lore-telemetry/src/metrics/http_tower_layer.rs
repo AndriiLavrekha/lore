@@ -8,7 +8,6 @@ use std::task::Poll;
 use std::time::Instant;
 
 use axum::extract::MatchedPath;
-use http::HeaderValue;
 use http::Request;
 use http::Response;
 use http::header::USER_AGENT;
@@ -18,22 +17,30 @@ use tower::Layer;
 use tower::Service;
 
 use super::USER_AGENT_NONE;
+use super::USER_AGENT_UNKNOWN;
 use super::http_metrics::HttpRequestMetrics;
+use super::user_agent_filter::NormalizeOutput;
+use super::user_agent_filter::UserAgentFilter;
 
 /// A `tower::Layer` that wraps the `HttpMetricsService` used to integrate with your Axum server
 ///
 /// Example
 /// ```
-/// let metrics_layer = lore_telemetry::http_tower_layer::HttpMetricsLayer::new();
+/// use std::sync::Arc;
+/// use lore_telemetry::user_agent_filter::UserAgentFilter;
+/// let filter = Arc::new(UserAgentFilter::default());
+/// let metrics_layer = lore_telemetry::http_tower_layer::HttpMetricsLayer::new(filter);
 /// let tower_layer = tower::ServiceBuilder::new().layer(metrics_layer);
 /// let mut server = tonic::transport::Server::builder().layer(tower_layer);
 /// ```
-#[derive(Clone, Default)]
-pub struct HttpMetricsLayer {}
+#[derive(Clone)]
+pub struct HttpMetricsLayer {
+    filter: Arc<UserAgentFilter>,
+}
 
 impl HttpMetricsLayer {
-    pub fn new() -> Self {
-        Default::default()
+    pub fn new(filter: Arc<UserAgentFilter>) -> Self {
+        Self { filter }
     }
 }
 
@@ -41,7 +48,10 @@ impl<S> Layer<S> for HttpMetricsLayer {
     type Service = HttpMetricsService<S>;
 
     fn layer(&self, inner: S) -> Self::Service {
-        HttpMetricsService { service: inner }
+        HttpMetricsService {
+            service: inner,
+            filter: self.filter.clone(),
+        }
     }
 }
 
@@ -49,6 +59,7 @@ impl<S> Layer<S> for HttpMetricsLayer {
 #[derive(Clone)]
 pub struct HttpMetricsService<S> {
     service: S,
+    filter: Arc<UserAgentFilter>,
 }
 
 impl<S, B, C> Service<Request<B>> for HttpMetricsService<S>
@@ -70,12 +81,16 @@ where
             None => "unmatched_path".into(),
         };
 
-        let user_agent = req
-            .headers()
-            .get(USER_AGENT)
-            .map(HeaderValue::to_str)
-            .and_then(Result::ok)
-            .map_or(USER_AGENT_NONE.clone(), Arc::from);
+        let user_agent = match req.headers().get(USER_AGENT).and_then(|v| v.to_str().ok()) {
+            Some(v) => match self.filter.normalize(v) {
+                NormalizeOutput::KnownAgent(label) => label,
+                NormalizeOutput::Unknown => {
+                    self.filter.sample_unknown_agent(v);
+                    USER_AGENT_UNKNOWN.clone()
+                }
+            },
+            None => USER_AGENT_NONE.clone(),
+        };
 
         let f = self.service.call(req);
 
