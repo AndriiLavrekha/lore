@@ -4,8 +4,11 @@ import { ChevronDown, CircleDot } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { dashboardNavItems } from "@/lib/navigation";
+import { getServerConfig } from "@/server/config";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const config = getServerConfig();
+
   return (
     <div className="min-h-screen bg-background">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r bg-card px-4 py-5 lg:flex lg:flex-col">
@@ -39,9 +42,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mt-auto rounded-lg border bg-background p-3">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-medium text-muted-foreground">Target</span>
-            <Badge variant="outline">static</Badge>
+            <Badge variant="outline">{config.grpcTls}</Badge>
           </div>
-          <p className="mt-2 truncate text-sm font-medium">127.0.0.1:41337</p>
+          <p className="mt-2 truncate text-sm font-medium">{config.grpcTarget}</p>
         </div>
       </aside>
 
@@ -52,10 +55,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="text-xs font-medium uppercase text-muted-foreground">
                 Lore server
               </span>
-              <span className="truncate text-sm font-semibold">127.0.0.1:41337</span>
+              <span className="truncate text-sm font-semibold">{config.grpcTarget}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="secondary">Phase 0 shell</Badge>
+              <Badge variant="secondary">{config.authMode}</Badge>
               <Button variant="outline" size="sm">
                 Repository
                 <ChevronDown data-icon="inline-end" aria-hidden="true" />

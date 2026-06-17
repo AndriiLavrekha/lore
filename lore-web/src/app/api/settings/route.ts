@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { getOidcRuntimeStatus } from "@/server/auth";
 import { getServerConfig } from "@/server/config";
 import {
   SETTINGS_COOKIE_NAMES,
@@ -40,6 +41,7 @@ async function readSettingsResponse() {
   return settingsResponseSchema.parse({
     ...config,
     hasBearerToken: Boolean(cookieStore.get(SETTINGS_COOKIE_NAMES.bearerToken)?.value),
+    oidc: getOidcRuntimeStatus(),
   });
 }
 

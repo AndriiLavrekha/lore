@@ -28,6 +28,12 @@ export const settingsResponseSchema = z.object({
   authMode: z.enum(["none", "bearer", "oidc"]),
   notificationStream: z.string().optional(),
   hasBearerToken: z.boolean(),
+  oidc: z.object({
+    enabled: z.boolean(),
+    missing: z.array(z.string()),
+    callbackUrl: z.string(),
+    tokenForwarding: z.enum(["oidc-access-token", "bearer-cookie", "disabled"]),
+  }),
 });
 
 export type SettingsRequest = z.infer<typeof settingsRequestSchema>;

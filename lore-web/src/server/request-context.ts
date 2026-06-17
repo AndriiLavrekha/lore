@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 
+import { getServerOidcAccessToken } from "@/server/auth";
 import { getServerConfig } from "@/server/config";
 import { SETTINGS_COOKIE_NAMES } from "@/server/settings";
 
@@ -25,6 +26,8 @@ export async function getRequestContext() {
 
   return {
     config,
-    bearerToken: cookieStore.get(SETTINGS_COOKIE_NAMES.bearerToken)?.value,
+    bearerToken:
+      cookieStore.get(SETTINGS_COOKIE_NAMES.bearerToken)?.value ??
+      (config.authMode === "oidc" ? await getServerOidcAccessToken() : undefined),
   };
 }
