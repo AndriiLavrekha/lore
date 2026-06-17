@@ -17,10 +17,10 @@ export function PlaceholderTable({ columns, rows }: PlaceholderTableProps) {
           </tr>
         </thead>
         <tbody className="divide-y">
-          {rows.map((row) => (
-            <tr key={row.join(":")}>
-              {row.map((cell) => (
-                <td key={cell} className="truncate px-4 py-3">
+          {rows.map((row, rowIndex) => (
+            <tr key={`${rowIndex}:${row.join(":")}`}>
+              {row.map((cell, cellIndex) => (
+                <td key={`${cellIndex}:${cell}`} className="truncate px-4 py-3">
                   {cell}
                 </td>
               ))}
