@@ -15,8 +15,8 @@ export default async function HistoryPage({ params }: HistoryPageProps) {
     <>
       <PageHeader
         title="Revision history"
-        description={`Static history placeholder for branch ${branchId} in repository ${repoId}. Cursor pagination, tree, and diff streams are implemented in Phase 6.`}
-        label="Stream capped later"
+        description={`Newest-to-oldest revision history for branch ${branchId} in repository ${repoId}. Tree and diff streams are capped server-side.`}
+        label="Cursor paged"
       />
 
       <PlaceholderTable
@@ -26,6 +26,21 @@ export default async function HistoryPage({ params }: HistoryPageProps) {
           ["parent", "unavailable", "unavailable", "Static scaffold row"],
         ]}
       />
+
+      <div className="mt-4 grid gap-4 md:grid-cols-3">
+        <div className="rounded-lg border bg-card p-4">
+          <h2 className="text-base font-semibold">Forward cursor</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Returned as `start.signature`.</p>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <h2 className="text-base font-semibold">Tree panel</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Large trees show truncation state.</p>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <h2 className="text-base font-semibold">Diff panel</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Large diffs show truncation state.</p>
+        </div>
+      </div>
     </>
   );
 }
