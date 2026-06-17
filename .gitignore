@@ -155,6 +155,7 @@ xcuserdata
 *.local.*
 .claude/skills/review-feedback/
 .claude-worktrees/
+.worktrees
 
 # test report
 ctrf/
