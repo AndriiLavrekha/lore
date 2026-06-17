@@ -36,10 +36,10 @@ export default async function BranchesPage({ params }: BranchesPageProps) {
       </div>
 
       <PlaceholderTable
-        columns={["Branch", "Category", "Tip", "Status"]}
+        columns={["Branch", "Category", "Tip", "Protection"]}
         rows={[
-          ["main", "trunk", "unavailable", "live"],
-          ["release", "release", "unavailable", "live"],
+          ["main", "trunk", "unavailable", "unknown"],
+          ["release", "release", "unavailable", "unknown"],
         ]}
       />
 
@@ -65,6 +65,20 @@ export default async function BranchesPage({ params }: BranchesPageProps) {
             className="mt-3 h-9 w-full rounded-md border bg-background px-3 text-sm"
             placeholder="64 hex characters"
           />
+        </div>
+        <div className="rounded-lg border bg-card p-4 md:col-span-2">
+          <h2 className="text-base font-semibold">Protection</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Toggle branch protection through metadata CAS after refreshing the branch metadata.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <Button type="button" variant="outline">
+              Protect branch
+            </Button>
+            <Button type="button" variant="outline">
+              Unprotect branch
+            </Button>
+          </div>
         </div>
       </div>
     </>
