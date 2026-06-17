@@ -1,4 +1,4 @@
-type GrpcReadable<T> = {
+export type GrpcReadable<T> = {
   on(event: "data", listener: (item: T) => void): GrpcReadable<T>;
   on(event: "end", listener: () => void): GrpcReadable<T>;
   on(event: "error", listener: (error: Error) => void): GrpcReadable<T>;

@@ -1,4 +1,4 @@
-import { Activity, Database, ShieldCheck } from "lucide-react";
+import { Activity, Database, Radio, ShieldCheck } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import {
@@ -8,38 +8,50 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getServerConfig } from "@/server/config";
+import { getCapabilityReport } from "@/server/grpc/capabilities";
 
-const overviewCards = [
-  {
-    title: "HTTP health",
-    value: "Not connected",
-    description: "Phase 0 does not call /health_check.",
-    icon: Activity,
-  },
-  {
-    title: "Repositories",
-    value: "Static shell",
-    description: "Repository APIs are added in later phases.",
-    icon: Database,
-  },
-  {
-    title: "Auth",
-    value: "None",
-    description: "Token handling remains server-only in later phases.",
-    icon: ShieldCheck,
-  },
-];
+export const dynamic = "force-dynamic";
 
-export default function OverviewPage() {
+export default async function OverviewPage() {
+  const config = getServerConfig();
+  const report = await getCapabilityReport({ config });
+  const overviewCards = [
+    {
+      title: "HTTP health",
+      value: report.health.status,
+      description: report.health.message ?? report.target.http,
+      icon: Activity,
+    },
+    {
+      title: "Repository list",
+      value: report.services.repositories.status,
+      description: report.services.repositories.message ?? "RepositoryService probe result.",
+      icon: Database,
+    },
+    {
+      title: "Auth state",
+      value: report.authState,
+      description: `Auth mode: ${report.authMode}`,
+      icon: ShieldCheck,
+    },
+    {
+      title: "Activity",
+      value: report.services.activity.status,
+      description: report.services.activity.message ?? report.notificationStream ?? "Configured",
+      icon: Radio,
+    },
+  ];
+
   return (
     <>
       <PageHeader
         title="Overview"
-        description="Static management dashboard shell for a Lore server. Connectivity, capability probes, and auth state are implemented after the scaffold phase."
-        label="No server required"
+        description="Connectivity and capability status for the configured Lore server target."
+        label={report.target.grpc}
       />
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {overviewCards.map((card) => {
           const Icon = card.icon;
 
