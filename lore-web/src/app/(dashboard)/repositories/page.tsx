@@ -1,33 +1,41 @@
-import Link from "next/link";
-
 import { PageHeader } from "@/components/page-header";
-import { PlaceholderTable } from "@/components/placeholder-table";
-import { Button } from "@/components/ui/button";
+import { RepositoriesClient } from "@/components/repositories/repositories-client";
+import type { RepositoryJson } from "@/server/grpc/repositories";
 
 const sampleRepoId = "00112233445566778899aabbccddeeff";
+const sampleRepositories: RepositoryJson[] = [
+  {
+    id: sampleRepoId,
+    name: "sample",
+    description: "Static fallback repository",
+    defaultBranchId: "11".repeat(16),
+    defaultBranchName: "main",
+    creator: "operator",
+    created: "0",
+    metadata: "aa".repeat(32),
+  },
+  {
+    id: "ffeeddccbbaa99887766554433221100",
+    name: "integration",
+    description: "Static fallback repository",
+    defaultBranchId: "22".repeat(16),
+    defaultBranchName: "trunk",
+    creator: "operator",
+    created: "0",
+    metadata: "bb".repeat(32),
+  },
+];
 
 export default function RepositoriesPage() {
   return (
     <>
       <PageHeader
         title="Repositories"
-        description="Repository inventory placeholder. Streaming repository list, create, delete, and metadata pointer display are implemented in Phase 3."
-        label="Placeholder data"
+        description="Repository inventory, metadata pointers, creation, and guarded deletion."
+        label="RepositoryService"
       />
 
-      <div className="mb-4 flex justify-end">
-        <Button asChild variant="outline">
-          <Link href={`/repositories/${sampleRepoId}/branches`}>Open sample repo</Link>
-        </Button>
-      </div>
-
-      <PlaceholderTable
-        columns={["Name", "Repository id", "Default branch", "Status"]}
-        rows={[
-          ["sample", sampleRepoId, "main", "static"],
-          ["integration", "ffeeddccbbaa99887766554433221100", "trunk", "static"],
-        ]}
-      />
+      <RepositoriesClient initialItems={sampleRepositories} />
     </>
   );
 }
