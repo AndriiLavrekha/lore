@@ -10,14 +10,16 @@ test("keyboard navigation reaches primary nav and repository actions", async ({ 
   await expect(page.getByRole("link", { name: /Lore Web/ })).toBeFocused();
 
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("link", { name: "Overview" })).toBeFocused();
+  const dashboard = page.getByLabel("Dashboard", { exact: true });
+
+  await expect(dashboard.getByRole("link", { name: "Overview" })).toBeFocused();
 
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("link", { name: "Repositories" })).toBeFocused();
+  await expect(dashboard.getByRole("link", { name: "Repositories" })).toBeFocused();
 
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Repositories" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Create repository" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create" })).toBeVisible();
   await expect(page.getByLabel("Delete confirmation")).toBeVisible();
 });
 
@@ -32,14 +34,15 @@ test("highest-value workflow pages expose controls and degraded states", async (
   await expect(page.getByRole("button", { name: "Unprotect branch" })).toBeVisible();
 
   await page.goto(`/repositories/${repoId}/branches/${branchId}/history`);
-  await expect(page.getByText("Forward cursor")).toBeVisible();
-  await expect(page.getByText("Diff panel")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Forward cursor" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Diff panel" })).toBeVisible();
 
   await page.goto(`/repositories/${repoId}/locks`);
   await expect(page.getByRole("button", { name: "Acquire lock" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Admin lock" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Release lock" })).toBeVisible();
 
   await page.goto(`/repositories/${repoId}/activity`);
-  await expect(page.getByText("Reconnect state: idle")).toBeVisible();
-  await expect(page.getByText("Notification stream: configure")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Connect stream" })).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("Notification stream");
 });

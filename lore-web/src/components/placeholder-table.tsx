@@ -5,8 +5,8 @@ type PlaceholderTableProps = {
 
 export function PlaceholderTable({ columns, rows }: PlaceholderTableProps) {
   return (
-    <div className="overflow-hidden rounded-lg border bg-card">
-      <table className="w-full table-fixed text-left text-sm">
+    <div className="overflow-x-auto rounded-lg border bg-card/95 shadow-sm">
+      <table className="w-full min-w-[720px] table-fixed text-left text-sm">
         <thead className="bg-muted text-xs font-medium uppercase text-muted-foreground">
           <tr>
             {columns.map((column) => (
@@ -18,9 +18,9 @@ export function PlaceholderTable({ columns, rows }: PlaceholderTableProps) {
         </thead>
         <tbody className="divide-y">
           {rows.map((row, rowIndex) => (
-            <tr key={`${rowIndex}:${row.join(":")}`}>
+            <tr key={`${rowIndex}:${row.join(":")}`} className="hover:bg-muted/45">
               {row.map((cell, cellIndex) => (
-                <td key={`${cellIndex}:${cell}`} className="truncate px-4 py-3">
+                <td key={`${cellIndex}:${cell}`} className="truncate px-4 py-3 font-mono text-xs">
                   {cell}
                 </td>
               ))}

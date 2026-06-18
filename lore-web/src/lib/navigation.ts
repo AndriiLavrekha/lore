@@ -40,22 +40,22 @@ export const dashboardNavItems: DashboardNavItem[] = [
 export const repositoryFeatureItems = [
   {
     label: "Branches",
-    description: "Live and deleted branch management placeholder.",
+    description: "Live and deleted branch management.",
     icon: GitBranch,
   },
   {
     label: "Revision history",
-    description: "History, tree, and diff placeholder.",
+    description: "History, tree, and diff inspection.",
     icon: History,
   },
   {
     label: "Locks",
-    description: "Repository lock management placeholder.",
+    description: "Repository lock management.",
     icon: LockKeyhole,
   },
   {
     label: "Activity",
-    description: "Branch and lock event stream placeholder.",
+    description: "Branch and lock event stream.",
     icon: Activity,
   },
 ];

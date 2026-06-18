@@ -14,17 +14,22 @@ export async function GET(request: Request, { params }: RouteParams) {
   const { config, bearerToken } = await getRequestContext();
   const url = new URL(request.url);
   validateRepositoryId(id);
-  return NextResponse.json(
-    await listBranches(
-      config,
-      id,
-      {
-        creator: url.searchParams.get("creator") ?? undefined,
-        includeDeleted: url.searchParams.get("include_deleted") === "true",
-      },
-      bearerToken,
-    ),
-  );
+  try {
+    return NextResponse.json(
+      await listBranches(
+        config,
+        id,
+        {
+          creator: url.searchParams.get("creator") ?? undefined,
+          includeDeleted: url.searchParams.get("include_deleted") === "true",
+        },
+        bearerToken,
+      ),
+    );
+  } catch (error) {
+    const mapped = mapGrpcBranchError(error as { code?: number; message?: string });
+    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
+  }
 }
 
 export async function POST(request: Request, { params }: RouteParams) {

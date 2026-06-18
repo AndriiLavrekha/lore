@@ -16,11 +16,18 @@ export async function GET(request: Request, { params }: RouteParams) {
   const cursorSignature = url.searchParams.get("cursor");
   const branchId = url.searchParams.get("branchId");
 
-  if (cursorSignature) {
-    return NextResponse.json(await listRevisions(config, id, { cursorSignature }, bearerToken));
+  try {
+    if (cursorSignature) {
+      return NextResponse.json(await listRevisions(config, id, { cursorSignature }, bearerToken));
+    }
+    if (!branchId) {
+      return NextResponse.json({ error: "branchId is required without cursor" }, { status: 400 });
+    }
+    return NextResponse.json(await listRevisions(config, id, { branchId, tip: true }, bearerToken));
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "revision list failed" },
+      { status: 500 },
+    );
   }
-  if (!branchId) {
-    return NextResponse.json({ error: "branchId is required without cursor" }, { status: 400 });
-  }
-  return NextResponse.json(await listRevisions(config, id, { branchId, tip: true }, bearerToken));
 }

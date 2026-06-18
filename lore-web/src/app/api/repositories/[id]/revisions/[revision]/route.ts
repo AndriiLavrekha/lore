@@ -16,13 +16,20 @@ export async function GET(request: Request, { params }: RouteParams) {
   const { config, bearerToken } = await getRequestContext();
   const specifier = { cursorSignature: revision };
 
-  if (view === "tree") {
-    return NextResponse.json(await revisionTree(config, id, specifier, bearerToken));
-  }
-  if (view === "diff") {
+  try {
+    if (view === "tree") {
+      return NextResponse.json(await revisionTree(config, id, specifier, bearerToken));
+    }
+    if (view === "diff") {
+      return NextResponse.json(
+        await revisionDiff(config, id, { from: specifier, to: specifier }, bearerToken),
+      );
+    }
+    return NextResponse.json(await revisionInfo(config, id, specifier, bearerToken));
+  } catch (error) {
     return NextResponse.json(
-      await revisionDiff(config, id, { from: specifier, to: specifier }, bearerToken),
+      { error: error instanceof Error ? error.message : "revision request failed" },
+      { status: 500 },
     );
   }
-  return NextResponse.json(await revisionInfo(config, id, specifier, bearerToken));
 }

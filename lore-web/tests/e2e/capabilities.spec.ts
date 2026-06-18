@@ -9,5 +9,6 @@ test("overview and settings render capability-oriented fields", async ({ page })
 
   await page.goto("/settings");
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
-  await expect(page.getByText("LORE_WEB_NOTIFICATION_STREAM")).toBeVisible();
+  await expect(page.getByRole("cell", { name: "LORE_WEB_NOTIFICATION_STREAM" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save settings" })).toBeVisible();
 });
