@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 
-import { branchCreateSchema, createBranch, listBranches } from "@/server/grpc/branches";
+import { branchCreateSchema, createBranch, listBranches, mapGrpcBranchError } from "@/server/grpc/branches";
 import { validateRepositoryId } from "@/server/grpc/repositories";
 import { getRequestContext } from "@/server/request-context";
 
@@ -30,6 +31,14 @@ export async function POST(request: Request, { params }: RouteParams) {
   const { id } = await params;
   const { config, bearerToken } = await getRequestContext();
   validateRepositoryId(id);
-  const body = branchCreateSchema.parse(await request.json());
-  return NextResponse.json(await createBranch(config, id, body, bearerToken), { status: 201 });
+  try {
+    const body = branchCreateSchema.parse(await request.json());
+    return NextResponse.json(await createBranch(config, id, body, bearerToken), { status: 201 });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json({ error: error.issues[0]?.message ?? "Invalid branch request" }, { status: 400 });
+    }
+    const mapped = mapGrpcBranchError(error as { code?: number; message?: string });
+    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
+  }
 }

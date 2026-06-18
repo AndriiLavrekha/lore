@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildRepositoryCreateRequest,
   mapGrpcRepositoryError,
+  normalizeRepositoryCreateInput,
   repositoryToJson,
   validateDeleteConfirmation,
   validateRepositoryId,
@@ -37,6 +38,32 @@ describe("repository service helpers", () => {
     expect(request.id).toHaveLength(16);
     expect(request.defaultBranchId).toHaveLength(16);
     expect(request.name).toBe("demo");
+  });
+
+  it("omits browser-supplied creator in unauthenticated mode", () => {
+    expect(
+      normalizeRepositoryCreateInput(
+        {
+          name: "demo",
+          description: "",
+          defaultBranchName: "main",
+          creator: "browser-user",
+        },
+        "none",
+      ),
+    ).not.toHaveProperty("creator");
+
+    expect(
+      normalizeRepositoryCreateInput(
+        {
+          name: "demo",
+          description: "",
+          defaultBranchName: "main",
+          creator: "token-user",
+        },
+        "bearer",
+      ),
+    ).toMatchObject({ creator: "token-user" });
   });
 
   it("maps repository records to safe JSON", () => {

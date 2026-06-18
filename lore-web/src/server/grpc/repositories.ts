@@ -67,6 +67,19 @@ export function uuidV7Bytes(): Buffer {
   return hexToBytes(uuidv7().replaceAll("-", ""), 16, "UUIDv7");
 }
 
+export function normalizeRepositoryCreateInput(
+  input: z.infer<typeof repositoryCreateSchema>,
+  authMode: LoreWebConfig["authMode"],
+) {
+  if (authMode !== "none") {
+    return input;
+  }
+
+  const serverOwnedInput = { ...input };
+  delete serverOwnedInput.creator;
+  return serverOwnedInput;
+}
+
 export function buildRepositoryCreateRequest(input: z.infer<typeof repositoryCreateSchema>) {
   return {
     id: uuidV7Bytes(),

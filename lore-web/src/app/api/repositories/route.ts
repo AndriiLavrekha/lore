@@ -4,6 +4,7 @@ import {
   createRepository,
   listRepositories,
   mapGrpcRepositoryError,
+  normalizeRepositoryCreateInput,
   repositoryCreateSchema,
 } from "@/server/grpc/repositories";
 import { getRequestContext } from "@/server/request-context";
@@ -24,7 +25,10 @@ export async function POST(request: Request) {
   const { config, bearerToken } = await getRequestContext();
   const body = repositoryCreateSchema.parse(await request.json());
   try {
-    return NextResponse.json(await createRepository(config, body, bearerToken), { status: 201 });
+    return NextResponse.json(
+      await createRepository(config, normalizeRepositoryCreateInput(body, config.authMode), bearerToken),
+      { status: 201 },
+    );
   } catch (error) {
     const mapped = mapGrpcRepositoryError(error as { code?: number; message?: string });
     return NextResponse.json({ error: mapped.message }, { status: mapped.status });

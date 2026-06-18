@@ -5,6 +5,7 @@ import {
   branchToJson,
   buildBranchCreateRequest,
   buildBranchPushRequest,
+  branchCreateSchema,
   mapGrpcBranchError,
   metadataHasRepository,
   validateBranchId,
@@ -46,6 +47,16 @@ describe("branch service helpers", () => {
     expect(create.id).toHaveLength(16);
     expect(create.stack[0].branchId).toEqual(Buffer.from(branchId, "hex"));
     expect(push.revisionSignature).toEqual(Buffer.from(signature, "hex"));
+  });
+
+  it("rejects root branch creation through the generic branch create schema", () => {
+    expect(() =>
+      branchCreateSchema.parse({
+        name: "root-like",
+        category: "smoke",
+        stack: [],
+      }),
+    ).toThrow("fork point");
   });
 
   it("maps branch records to JSON", () => {

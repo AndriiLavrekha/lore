@@ -34,7 +34,7 @@ export const branchCreateSchema = z.object({
         revisionSignature: z.string(),
       }),
     )
-    .default([]),
+    .min(1, "Branch create requires at least one fork point"),
 });
 
 export const branchDeleteSchema = z.object({
