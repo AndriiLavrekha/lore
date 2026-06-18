@@ -147,7 +147,7 @@ function unary<TResponse>(
   }
 
   return new Promise((resolve, reject) => {
-    method(request, metadata, deadline(), (error, response) => {
+    method.call(client, request, metadata, deadline(), (error, response) => {
       if (error) {
         reject(error);
       } else {
@@ -167,7 +167,7 @@ export async function listRepositories(config: LoreWebConfig, bearerToken?: stri
   if (!method) {
     throw new Error("missing RepositoryList method");
   }
-  const result = await collectStream(method({}, buildMetadata({ bearerToken }), deadline()), {
+  const result = await collectStream(method.call(client, {}, buildMetadata({ bearerToken }), deadline()), {
     cap: 1_000,
   });
   return {

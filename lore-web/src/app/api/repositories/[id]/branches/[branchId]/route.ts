@@ -5,6 +5,7 @@ import {
   branchPushSchema,
   deleteBranch,
   getBranch,
+  mapGrpcBranchError,
   pushBranch,
 } from "@/server/grpc/branches";
 import { validateRepositoryId } from "@/server/grpc/repositories";
@@ -18,7 +19,12 @@ export async function GET(_request: Request, { params }: RouteParams) {
   const { id, branchId } = await params;
   const { config, bearerToken } = await getRequestContext();
   validateRepositoryId(id);
-  return NextResponse.json(await getBranch(config, id, branchId, bearerToken));
+  try {
+    return NextResponse.json(await getBranch(config, id, branchId, bearerToken));
+  } catch (error) {
+    const mapped = mapGrpcBranchError(error as { code?: number; message?: string });
+    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
+  }
 }
 
 export async function DELETE(request: Request, { params }: RouteParams) {
@@ -26,7 +32,12 @@ export async function DELETE(request: Request, { params }: RouteParams) {
   const { config, bearerToken } = await getRequestContext();
   validateRepositoryId(id);
   const body = branchDeleteSchema.parse(await request.json());
-  return NextResponse.json(await deleteBranch(config, id, branchId, body, bearerToken));
+  try {
+    return NextResponse.json(await deleteBranch(config, id, branchId, body, bearerToken));
+  } catch (error) {
+    const mapped = mapGrpcBranchError(error as { code?: number; message?: string });
+    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
+  }
 }
 
 export async function PATCH(request: Request, { params }: RouteParams) {
@@ -34,5 +45,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   const { config, bearerToken } = await getRequestContext();
   validateRepositoryId(id);
   const body = branchPushSchema.parse(await request.json());
-  return NextResponse.json(await pushBranch(config, id, branchId, body, bearerToken));
+  try {
+    return NextResponse.json(await pushBranch(config, id, branchId, body, bearerToken));
+  } catch (error) {
+    const mapped = mapGrpcBranchError(error as { code?: number; message?: string });
+    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
+  }
 }

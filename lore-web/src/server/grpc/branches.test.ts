@@ -5,6 +5,7 @@ import {
   branchToJson,
   buildBranchCreateRequest,
   buildBranchPushRequest,
+  mapGrpcBranchError,
   metadataHasRepository,
   validateBranchId,
   validateRevisionSignature,
@@ -69,5 +70,17 @@ describe("branch service helpers", () => {
   it("detects both required repository metadata keys", () => {
     expect(metadataHasRepository(withRepository(buildMetadata(), repoId), repoId)).toBe(true);
     expect(metadataHasRepository(buildMetadata(), repoId)).toBe(false);
+  });
+
+  it("maps branch precondition failures to conflict responses", () => {
+    expect(
+      mapGrpcBranchError({
+        code: 9,
+        message: "9 FAILED_PRECONDITION: Branch is the default branch",
+      }),
+    ).toEqual({
+      status: 409,
+      message: "9 FAILED_PRECONDITION: Branch is the default branch",
+    });
   });
 });

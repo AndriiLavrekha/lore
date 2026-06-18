@@ -73,7 +73,7 @@ function unary<TResponse>(client: DynamicGrpcClient, methodName: string, request
   const method = client[methodName] as UnaryMethod<TResponse> | undefined;
   if (!method) return Promise.reject(new Error(`missing gRPC method ${methodName}`));
   return new Promise<TResponse>((resolve, reject) => {
-    method(request, metadata, deadline(), (error, response) => {
+    method.call(client, request, metadata, deadline(), (error, response) => {
       if (error) reject(error);
       else resolve(response);
     });

@@ -84,5 +84,5 @@ export function subscribeNotifications(
   if (!subscribe) {
     throw new Error("missing NotificationService.Subscribe method");
   }
-  return subscribe({ stream }, withRepository(buildMetadata({ bearerToken }), repoId));
+  return subscribe.call(client, { stream }, withRepository(buildMetadata({ bearerToken }), repoId));
 }

@@ -88,7 +88,7 @@ function unary<TResponse>(
     return Promise.reject(new Error(`missing gRPC method ${methodName}`));
   }
   return new Promise<TResponse>((resolve, reject) => {
-    method(request, metadata, deadline(), (error, response) => {
+    method.call(client, request, metadata, deadline(), (error, response) => {
       if (error) reject(error);
       else resolve(response);
     });
@@ -133,10 +133,12 @@ export async function revisionTree(
   input: RevisionListInput & { pathPrefix?: string; maxDepth?: number },
   bearerToken?: string,
 ) {
-  const method = thinClient(config).revisionTree as StreamMethod<unknown> | undefined;
+  const client = thinClient(config);
+  const method = client.revisionTree as StreamMethod<unknown> | undefined;
   if (!method) throw new Error("missing RevisionTree method");
   return collectRevisionStream(
-    method(
+    method.call(
+      client,
       { ...buildRevisionSpecifier(input), pathPrefix: input.pathPrefix, maxDepth: input.maxDepth },
       repoMetadata(repoId, bearerToken),
       deadline(),
@@ -150,10 +152,12 @@ export async function revisionDiff(
   input: { from: RevisionListInput; to: RevisionListInput; autoresolve?: boolean },
   bearerToken?: string,
 ) {
-  const method = thinClient(config).revisionDiff as StreamMethod<unknown> | undefined;
+  const client = thinClient(config);
+  const method = client.revisionDiff as StreamMethod<unknown> | undefined;
   if (!method) throw new Error("missing RevisionDiff method");
   return collectRevisionStream(
-    method(
+    method.call(
+      client,
       {
         ...prefixSpecifier("from", buildRevisionSpecifier(input.from)),
         ...prefixSpecifier("to", buildRevisionSpecifier(input.to)),

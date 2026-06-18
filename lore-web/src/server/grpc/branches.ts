@@ -1,4 +1,4 @@
-import { type Client, type Metadata } from "@grpc/grpc-js";
+import { status, type Client, type Metadata } from "@grpc/grpc-js";
 import { v7 as uuidv7 } from "uuid";
 import { z } from "zod";
 
@@ -141,6 +141,25 @@ export function assertBranchDeleteConfirmation({
   }
 }
 
+export function mapGrpcBranchError(error: { code?: number; message?: string }) {
+  const message = error.message ?? "branch request failed";
+  switch (error.code) {
+    case status.INVALID_ARGUMENT:
+      return { status: 400, message };
+    case status.UNAUTHENTICATED:
+      return { status: 401, message };
+    case status.PERMISSION_DENIED:
+      return { status: 403, message };
+    case status.NOT_FOUND:
+      return { status: 404, message };
+    case status.ALREADY_EXISTS:
+    case status.FAILED_PRECONDITION:
+      return { status: 409, message };
+    default:
+      return { status: 500, message };
+  }
+}
+
 export function metadataHasRepository(metadata: Metadata, repoIdHex: string) {
   const repoId = repoIdHexToBytes(repoIdHex);
   const repositoryId = metadata.get("urc-repository-id-bin")[0];
@@ -180,7 +199,7 @@ function unary<TResponse>(
   }
 
   return new Promise((resolve, reject) => {
-    method(request, metadata, deadline(), (error, response) => {
+    method.call(client, request, metadata, deadline(), (error, response) => {
       if (error) {
         reject(error);
       } else {
@@ -202,7 +221,8 @@ export async function listBranches(
     throw new Error("missing BranchList method");
   }
   const result = await collectStream(
-    method(
+    method.call(
+      client,
       { creator: options.creator, includeDeleted: Boolean(options.includeDeleted) },
       branchMetadata(repoId, bearerToken),
       deadline(),

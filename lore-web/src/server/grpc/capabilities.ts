@@ -181,7 +181,8 @@ function unary<TResponse>(
 
   return new Promise((resolve, reject) => {
     const method = client[methodName] as UnaryMethod<TResponse>;
-    method(
+    method.call(
+      client,
       request,
       metadata,
       { deadline: new Date(Date.now() + PROBE_TIMEOUT_MS) },
@@ -243,7 +244,7 @@ function createGrpcCapabilityAdapter(
           config,
         );
         const repositoryList = client.repositoryList as StreamMethod<unknown> | undefined;
-        const call = repositoryList?.({}, metadata, {
+        const call = repositoryList?.call(client, {}, metadata, {
           deadline: new Date(Date.now() + PROBE_TIMEOUT_MS),
         });
         if (!call) {
@@ -262,7 +263,8 @@ function createGrpcCapabilityAdapter(
           config,
         );
         const branchList = client.branchList as StreamMethod<unknown> | undefined;
-        const call = branchList?.(
+        const call = branchList?.call(
+          client,
           { includeDeleted: false },
           withRepository(metadata, repoId),
           { deadline: new Date(Date.now() + PROBE_TIMEOUT_MS) },
