@@ -51,8 +51,8 @@ export function buildAuthPageState(settings: SettingsResponse, nextPath?: string
   return {
     primaryMode: settings.authMode,
     nextPath,
-    oidcReady: settings.authMode === "oidc" && settings.oidc.enabled,
-    bearerReady: settings.authMode === "bearer" && settings.hasBearerToken,
+    oidcReady: settings.oidc.enabled,
+    bearerReady: settings.hasBearerToken,
     disabled: settings.authMode === "none",
   };
 }

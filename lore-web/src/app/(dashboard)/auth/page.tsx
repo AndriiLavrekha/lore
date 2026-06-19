@@ -12,11 +12,19 @@ type AuthPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
+function sessionHasAccessToken(session: Awaited<ReturnType<typeof getServerSession>>): boolean {
+  return (
+    typeof session === "object" &&
+    session !== null &&
+    "hasAccessToken" in session &&
+    session.hasAccessToken === true
+  );
+}
+
 export default async function AuthPage({ searchParams }: AuthPageProps) {
   const params = await searchParams;
   const settings = await readSessionSettingsResponse();
   const session = await getServerSession(authOptions);
-  const sessionWithToken = session as typeof session & { hasAccessToken?: boolean };
   const nextPath = safeAuthNextPath(params.next);
 
   return (
@@ -34,7 +42,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
           authenticated: Boolean(session?.user),
           name: session?.user?.name ?? undefined,
           email: session?.user?.email ?? undefined,
-          hasAccessToken: Boolean(sessionWithToken?.hasAccessToken),
+          hasAccessToken: sessionHasAccessToken(session),
         }}
       />
     </>

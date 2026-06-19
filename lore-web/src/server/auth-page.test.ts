@@ -58,11 +58,58 @@ describe("buildAuthPageState", () => {
     });
   });
 
+  it("keeps configured oidc available when auth mode is none", () => {
+    expect(
+      buildAuthPageState(
+        {
+          ...baseSettings,
+          oidc: {
+            enabled: true,
+            missing: [],
+            callbackUrl: "http://127.0.0.1:3000/api/auth/callback/oidc",
+            tokenForwarding: "disabled",
+          },
+        },
+        undefined,
+      ),
+    ).toEqual({
+      primaryMode: "none",
+      nextPath: undefined,
+      oidcReady: true,
+      bearerReady: false,
+      disabled: true,
+    });
+  });
+
   it("marks bearer auth not ready without a saved token", () => {
     expect(buildAuthPageState({ ...baseSettings, authMode: "bearer" }, "/repositories")).toEqual({
       primaryMode: "bearer",
       nextPath: "/repositories",
       oidcReady: false,
+      bearerReady: false,
+      disabled: false,
+    });
+  });
+
+  it("keeps configured oidc available when bearer mode is selected", () => {
+    expect(
+      buildAuthPageState(
+        {
+          ...baseSettings,
+          authMode: "bearer",
+          oidc: {
+            enabled: true,
+            missing: [],
+            callbackUrl: "http://127.0.0.1:3000/api/auth/callback/oidc",
+            tokenForwarding: "bearer-cookie",
+          },
+        },
+        "/repositories",
+      ),
+    ).toEqual({
+      primaryMode: "bearer",
+      nextPath: "/repositories",
+      oidcReady: true,
       bearerReady: false,
       disabled: false,
     });

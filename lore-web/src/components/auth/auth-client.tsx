@@ -75,6 +75,17 @@ function forwardingLabel(value: SettingsResponse["oidc"]["tokenForwarding"]) {
   }
 }
 
+function selectedModeReady(state: AuthPageState) {
+  switch (state.primaryMode) {
+    case "oidc":
+      return state.oidcReady;
+    case "bearer":
+      return state.bearerReady;
+    case "none":
+      return false;
+  }
+}
+
 function StatusIcon({ ok }: { ok: boolean }) {
   return ok ? (
     <CheckCircle2 aria-hidden="true" className="size-4 text-emerald-600" />
@@ -97,8 +108,8 @@ export function AuthClient({ initialSettings, state, oidcSession }: AuthClientPr
     () => ({
       primaryMode: settings.authMode,
       nextPath: state.nextPath,
-      oidcReady: settings.authMode === "oidc" && settings.oidc.enabled,
-      bearerReady: settings.authMode === "bearer" && settings.hasBearerToken,
+      oidcReady: settings.oidc.enabled,
+      bearerReady: settings.hasBearerToken,
       disabled: settings.authMode === "none",
     }),
     [settings, state.nextPath],
@@ -107,6 +118,17 @@ export function AuthClient({ initialSettings, state, oidcSession }: AuthClientPr
   const callbackUrl = currentState.nextPath ?? "/overview";
   const missingOidc = settings.oidc.missing.length > 0 ? settings.oidc.missing.join(", ") : "None";
   const displayName = oidcSession.name ?? oidcSession.email ?? "Signed in";
+  const authModeReady = selectedModeReady(currentState);
+  const authModeDetail =
+    currentState.primaryMode === "none"
+      ? "Requests are sent without credentials."
+      : currentState.primaryMode === "bearer"
+        ? currentState.bearerReady
+          ? "Bearer mode selected; stored bearer token can be forwarded."
+          : "Bearer mode selected; save a bearer token before requests can forward credentials."
+        : currentState.oidcReady
+          ? "OIDC mode selected; provider config is ready for sign-in."
+          : `OIDC mode selected; missing config: ${missingOidc}.`;
 
   async function saveBearerToken() {
     setSavingBearer(true);
@@ -195,12 +217,8 @@ export function AuthClient({ initialSettings, state, oidcSession }: AuthClientPr
             <StatusTile
               label="Auth mode"
               value={currentState.disabled ? "Disabled" : modeLabel(currentState.primaryMode)}
-              ok={!currentState.disabled}
-              detail={
-                currentState.disabled
-                  ? "Requests are sent without credentials."
-                  : "Requests can forward configured credentials."
-              }
+              ok={authModeReady}
+              detail={authModeDetail}
             />
             <StatusTile
               label="Current target"
