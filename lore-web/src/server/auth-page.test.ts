@@ -28,6 +28,7 @@ describe("safeAuthNextPath", () => {
     expect(safeAuthNextPath("//example.test/repositories")).toBeUndefined();
     expect(safeAuthNextPath("/api")).toBeUndefined();
     expect(safeAuthNextPath("/api/settings")).toBeUndefined();
+    expect(safeAuthNextPath("/auth")).toBeUndefined();
     expect(safeAuthNextPath("/auth?next=/repositories")).toBeUndefined();
     expect(safeAuthNextPath("/auth/")).toBeUndefined();
     expect(safeAuthNextPath("/auth/settings")).toBeUndefined();
@@ -42,6 +43,7 @@ describe("safeAuthNextPath", () => {
     expect(safeAuthNextPath("/auth%2fsettings")).toBeUndefined();
     expect(safeAuthNextPath("/%61uth/settings")).toBeUndefined();
     expect(safeAuthNextPath("/api%2fsettings")).toBeUndefined();
+    expect(safeAuthNextPath("/%E0%A4%A")).toBeUndefined();
   });
 });
 
