@@ -10,7 +10,7 @@ export type AuthPageState = {
   disabled: boolean;
 };
 
-export function safeAuthNextPath(value: string | string[] | undefined) {
+export function safeAuthNextPath(value: string | string[] | undefined): string | undefined {
   const candidate = Array.isArray(value) ? value[0] : value;
 
   if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
@@ -38,6 +38,7 @@ export function safeAuthNextPath(value: string | string[] | undefined) {
   if (
     decodedPathname === "/auth" ||
     decodedPathname.startsWith("/auth/") ||
+    decodedPathname === "/api" ||
     decodedPathname.startsWith("/api/")
   ) {
     return undefined;

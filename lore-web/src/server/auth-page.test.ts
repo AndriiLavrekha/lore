@@ -26,11 +26,16 @@ describe("safeAuthNextPath", () => {
   it("rejects unsafe or auth-loop paths", () => {
     expect(safeAuthNextPath("https://example.test/repositories")).toBeUndefined();
     expect(safeAuthNextPath("//example.test/repositories")).toBeUndefined();
+    expect(safeAuthNextPath("/api")).toBeUndefined();
     expect(safeAuthNextPath("/api/settings")).toBeUndefined();
     expect(safeAuthNextPath("/auth?next=/repositories")).toBeUndefined();
     expect(safeAuthNextPath("/auth/")).toBeUndefined();
     expect(safeAuthNextPath("/auth/settings")).toBeUndefined();
     expect(safeAuthNextPath(undefined)).toBeUndefined();
+  });
+
+  it("uses the first value when next contains multiple values", () => {
+    expect(safeAuthNextPath(["/repositories", "/api"])).toBe("/repositories");
   });
 
   it("rejects encoded protected paths", () => {
