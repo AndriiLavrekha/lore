@@ -36,6 +36,7 @@ type AuthClientProps = {
 };
 
 type RequestState = { tone: "idle" | "success" | "error"; message: string };
+type OidcTokenState = Pick<OidcSessionState, "hasAccessToken">;
 
 const inputClass =
   "h-10 min-w-0 rounded-md border bg-background px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -75,14 +76,23 @@ function forwardingLabel(value: SettingsResponse["oidc"]["tokenForwarding"]) {
   }
 }
 
-function selectedModeReady(state: AuthPageState) {
+export function deriveAuthRequestStatus(state: AuthPageState, oidcSession: OidcTokenState) {
   switch (state.primaryMode) {
     case "oidc":
-      return state.oidcReady;
+      return {
+        ready: oidcSession.hasAccessToken,
+        forwardingReady: oidcSession.hasAccessToken,
+      };
     case "bearer":
-      return state.bearerReady;
+      return {
+        ready: state.bearerReady,
+        forwardingReady: state.bearerReady,
+      };
     case "none":
-      return false;
+      return {
+        ready: false,
+        forwardingReady: false,
+      };
   }
 }
 
@@ -118,7 +128,23 @@ export function AuthClient({ initialSettings, state, oidcSession }: AuthClientPr
   const callbackUrl = currentState.nextPath ?? "/overview";
   const missingOidc = settings.oidc.missing.length > 0 ? settings.oidc.missing.join(", ") : "None";
   const displayName = oidcSession.name ?? oidcSession.email ?? "Signed in";
-  const authModeReady = selectedModeReady(currentState);
+  const authRequestStatus = deriveAuthRequestStatus(currentState, oidcSession);
+  const forwardingValue =
+    currentState.primaryMode === "bearer"
+      ? "bearer-cookie"
+      : currentState.primaryMode === "oidc"
+        ? settings.oidc.tokenForwarding
+        : "disabled";
+  const forwardingDetail =
+    currentState.primaryMode === "none"
+      ? "Requests are sent without credentials."
+      : currentState.primaryMode === "bearer"
+        ? settings.hasBearerToken
+          ? "Stored bearer token will be forwarded with server requests."
+          : "No bearer token is stored for server requests."
+        : oidcSession.hasAccessToken
+          ? "Signed-in OIDC access token will be forwarded with server requests."
+          : "No OIDC access token is available for server requests.";
   const authModeDetail =
     currentState.primaryMode === "none"
       ? "Requests are sent without credentials."
@@ -126,9 +152,11 @@ export function AuthClient({ initialSettings, state, oidcSession }: AuthClientPr
         ? currentState.bearerReady
           ? "Bearer mode selected; stored bearer token can be forwarded."
           : "Bearer mode selected; save a bearer token before requests can forward credentials."
-        : currentState.oidcReady
-          ? "OIDC mode selected; provider config is ready for sign-in."
-          : `OIDC mode selected; missing config: ${missingOidc}.`;
+        : !currentState.oidcReady
+          ? `OIDC mode selected; missing config: ${missingOidc}.`
+          : oidcSession.hasAccessToken
+            ? "OIDC mode selected; signed-in access token can be forwarded."
+            : "OIDC mode selected; sign in before requests can forward credentials.";
 
   async function saveBearerToken() {
     setSavingBearer(true);
@@ -217,7 +245,7 @@ export function AuthClient({ initialSettings, state, oidcSession }: AuthClientPr
             <StatusTile
               label="Auth mode"
               value={currentState.disabled ? "Disabled" : modeLabel(currentState.primaryMode)}
-              ok={authModeReady}
+              ok={authRequestStatus.ready}
               detail={authModeDetail}
             />
             <StatusTile
@@ -234,9 +262,9 @@ export function AuthClient({ initialSettings, state, oidcSession }: AuthClientPr
             />
             <StatusTile
               label="Forwarding"
-              value={forwardingLabel(settings.oidc.tokenForwarding)}
-              ok={settings.oidc.tokenForwarding !== "disabled"}
-              detail="Credential source used by server requests."
+              value={forwardingLabel(forwardingValue)}
+              ok={authRequestStatus.forwardingReady}
+              detail={forwardingDetail}
             />
           </div>
         </div>
@@ -381,13 +409,13 @@ export function AuthClient({ initialSettings, state, oidcSession }: AuthClientPr
             <DiagnosticPanel
               icon={<Radio aria-hidden="true" className="size-4" />}
               label="OIDC"
-              status={currentState.oidcReady ? "Ready" : "Unavailable"}
+              status={settings.oidc.enabled ? "Provider ready" : "Unavailable"}
               detail={
                 settings.oidc.enabled
                   ? `Callback: ${settings.oidc.callbackUrl}`
                   : `Missing: ${missingOidc}`
               }
-              ok={currentState.oidcReady}
+              ok={settings.oidc.enabled}
             />
             <DiagnosticPanel
               icon={<KeyRound aria-hidden="true" className="size-4" />}
