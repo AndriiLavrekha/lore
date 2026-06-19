@@ -38,7 +38,10 @@ export async function POST(request: Request) {
   }
 
   if (body.clearBearerToken) {
-    cookieStore.delete(SETTINGS_COOKIE_NAMES.bearerToken);
+    cookieStore.delete({
+      name: SETTINGS_COOKIE_NAMES.bearerToken,
+      path: cookieOptions.path,
+    });
   }
 
   return NextResponse.json(await readSessionSettingsResponse());

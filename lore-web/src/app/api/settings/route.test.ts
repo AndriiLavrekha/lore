@@ -4,7 +4,7 @@ import { SETTINGS_COOKIE_NAMES } from "@/server/settings";
 
 const mocks = vi.hoisted(() => ({
   cookieValues: {} as Record<string, string | undefined>,
-  deletedNames: [] as string[],
+  deletedCookies: [] as Array<string | { name: string; path?: string }>,
 }));
 
 vi.mock("next/headers", () => ({
@@ -17,9 +17,12 @@ vi.mock("next/headers", () => ({
     set: (name: string, value: string) => {
       mocks.cookieValues[name] = value;
     },
-    delete: (name: string) => {
-      mocks.deletedNames.push(name);
-      delete mocks.cookieValues[name];
+    delete: (options: string | { name: string; path?: string }) => {
+      mocks.deletedCookies.push(options);
+
+      if (typeof options === "object" && options.path === "/") {
+        delete mocks.cookieValues[options.name];
+      }
     },
   })),
 }));
@@ -34,7 +37,7 @@ describe("settings route", () => {
       delete mocks.cookieValues[key];
     }
 
-    mocks.deletedNames = [];
+    mocks.deletedCookies = [];
   });
 
   it("clears a stored bearer token and reports disabled bearer forwarding", async () => {
@@ -50,7 +53,10 @@ describe("settings route", () => {
     );
     const payload = await response.json();
 
-    expect(mocks.deletedNames).toContain(SETTINGS_COOKIE_NAMES.bearerToken);
+    expect(mocks.deletedCookies).toContainEqual({
+      name: SETTINGS_COOKIE_NAMES.bearerToken,
+      path: "/",
+    });
     expect(mocks.cookieValues[SETTINGS_COOKIE_NAMES.bearerToken]).toBeUndefined();
     expect(payload.hasBearerToken).toBe(false);
     expect(payload.oidc.tokenForwarding).toBe("disabled");
