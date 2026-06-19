@@ -32,6 +32,12 @@ describe("safeAuthNextPath", () => {
     expect(safeAuthNextPath("/auth/settings")).toBeUndefined();
     expect(safeAuthNextPath(undefined)).toBeUndefined();
   });
+
+  it("rejects encoded protected paths", () => {
+    expect(safeAuthNextPath("/auth%2fsettings")).toBeUndefined();
+    expect(safeAuthNextPath("/%61uth/settings")).toBeUndefined();
+    expect(safeAuthNextPath("/api%2fsettings")).toBeUndefined();
+  });
 });
 
 describe("buildAuthPageState", () => {

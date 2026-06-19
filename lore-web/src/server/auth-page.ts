@@ -28,10 +28,17 @@ export function safeAuthNextPath(value: string | string[] | undefined) {
     return undefined;
   }
 
+  let decodedPathname: string;
+  try {
+    decodedPathname = decodeURIComponent(parsed.pathname);
+  } catch {
+    return undefined;
+  }
+
   if (
-    parsed.pathname === "/auth" ||
-    parsed.pathname.startsWith("/auth/") ||
-    parsed.pathname.startsWith("/api/")
+    decodedPathname === "/auth" ||
+    decodedPathname.startsWith("/auth/") ||
+    decodedPathname.startsWith("/api/")
   ) {
     return undefined;
   }
