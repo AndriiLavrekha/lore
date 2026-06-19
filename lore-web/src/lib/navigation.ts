@@ -7,6 +7,7 @@ import {
   LucideIcon,
   ServerCog,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 
 export type DashboardNavItem = {
@@ -28,6 +29,12 @@ export const dashboardNavItems: DashboardNavItem[] = [
     label: "Repositories",
     description: "Repository inventory and management actions.",
     icon: BookOpen,
+  },
+  {
+    href: "/auth",
+    label: "Auth",
+    description: "Sign-in state, bearer token, and OIDC diagnostics.",
+    icon: ShieldCheck,
   },
   {
     href: "/settings",

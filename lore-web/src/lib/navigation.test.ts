@@ -5,10 +5,11 @@ import {
 } from "@/lib/navigation";
 
 describe("dashboard navigation", () => {
-  it("exposes the phase 0 top-level dashboard routes", () => {
+  it("exposes the top-level dashboard routes", () => {
     expect(dashboardNavItems.map((item) => item.href)).toEqual([
       "/overview",
       "/repositories",
+      "/auth",
       "/settings",
     ]);
   });
