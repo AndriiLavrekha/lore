@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { deriveAuthRequestStatus } from "@/components/auth/auth-client";
+import { deriveAuthForwardingDisplay, deriveAuthRequestStatus } from "@/components/auth/auth-client";
 import type { AuthPageState } from "@/server/auth-page";
 
 const baseState: AuthPageState = {
@@ -60,6 +60,31 @@ describe("deriveAuthRequestStatus", () => {
     ).toEqual({
       ready: true,
       forwardingReady: true,
+    });
+  });
+});
+
+describe("deriveAuthForwardingDisplay", () => {
+  it("shows OIDC access token forwarding from the current session token", () => {
+    expect(
+      deriveAuthForwardingDisplay(
+        {
+          ...baseState,
+          primaryMode: "oidc",
+          oidcReady: false,
+          disabled: false,
+        },
+        {
+          oidcTokenForwarding: "disabled",
+          hasBearerToken: false,
+        },
+        { hasAccessToken: true },
+      ),
+    ).toMatchObject({
+      value: "oidc-access-token",
+      label: "OIDC access token",
+      ready: true,
+      detail: "Current OIDC access token will be forwarded with server requests.",
     });
   });
 });
