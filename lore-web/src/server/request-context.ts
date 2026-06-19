@@ -24,10 +24,15 @@ export async function getRequestContext() {
       process.env.LORE_WEB_NOTIFICATION_STREAM,
   });
 
+  const bearerToken =
+    config.authMode === "oidc"
+      ? await getServerOidcAccessToken()
+      : config.authMode === "bearer"
+        ? cookieStore.get(SETTINGS_COOKIE_NAMES.bearerToken)?.value
+        : undefined;
+
   return {
     config,
-    bearerToken:
-      cookieStore.get(SETTINGS_COOKIE_NAMES.bearerToken)?.value ??
-      (config.authMode === "oidc" ? await getServerOidcAccessToken() : undefined),
+    bearerToken,
   };
 }
