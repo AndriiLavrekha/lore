@@ -37,18 +37,23 @@ export function LocksClient({ repoId }: { repoId: string }) {
   const [loading, setLoading] = useState(false);
   const [state, setState] = useState<RequestState>({ tone: "idle", message: "Lock actions are ready." });
 
+  async function loadLocks() {
+    const params = new URLSearchParams();
+    if (branch.trim()) params.set("branch", branch.trim());
+    if (owner.trim()) params.set("owner", owner.trim());
+    if (description.trim() && (branch.trim() || owner.trim())) params.set("description", description.trim());
+    const payload = await readJson<ApiList>(
+      await fetch(`/api/repositories/${repoId}/locks?${params.toString()}`, { cache: "no-store" }),
+    );
+    const next = payload.items ?? [];
+    setLocks(next);
+    return next;
+  }
+
   async function queryLocks() {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (branch.trim()) params.set("branch", branch.trim());
-      if (owner.trim()) params.set("owner", owner.trim());
-      if (description.trim() && (branch.trim() || owner.trim())) params.set("description", description.trim());
-      const payload = await readJson<ApiList>(
-        await fetch(`/api/repositories/${repoId}/locks?${params.toString()}`, { cache: "no-store" }),
-      );
-      const next = payload.items ?? [];
-      setLocks(next);
+      const next = await loadLocks();
       setState({
         tone: "success",
         message: next.length ? `Loaded ${next.length} locks.` : "No locks matched the current filters.",
@@ -98,11 +103,11 @@ export function LocksClient({ repoId }: { repoId: string }) {
           body: JSON.stringify(body()),
         }),
       );
+      await loadLocks();
       setState({
         tone: "success",
         message: mode === "release" ? "Lock release requested." : mode === "admin" ? "Admin lock requested." : "Lock acquire requested.",
       });
-      await queryLocks();
     } catch (error) {
       setState({ tone: "error", message: error instanceof Error ? error.message : "Lock action failed." });
     } finally {

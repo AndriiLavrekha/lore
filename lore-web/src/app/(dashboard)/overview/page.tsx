@@ -8,14 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getServerConfig } from "@/server/config";
 import { getCapabilityReport } from "@/server/grpc/capabilities";
+import { getRequestContext } from "@/server/request-context";
 
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
-  const config = getServerConfig();
-  const report = await getCapabilityReport({ config });
+  const { config, bearerToken } = await getRequestContext();
+  const report = await getCapabilityReport({ config, bearerToken });
   const overviewCards = [
     {
       title: "HTTP health",

@@ -29,9 +29,9 @@ test("locks page queries, acquires, and releases locks", async ({ page }) => {
   await page.getByRole("textbox", { name: "Branch filter" }).fill(branchId);
   await page.getByRole("textbox", { name: "Path filter" }).fill(lock.description);
   await page.getByRole("button", { name: "Acquire lock" }).click();
-  await expect(page.getByRole("status")).toContainText("Loaded 1 locks.");
+  await expect(page.getByRole("status")).toContainText("Lock acquire requested.");
   await expect(page.getByRole("row", { name: /README/ })).toBeVisible();
 
   await page.getByRole("button", { name: "Release lock" }).click();
-  await expect(page.getByRole("status")).toContainText("Loaded 1 locks.");
+  await expect(page.getByRole("status")).toContainText("Lock release requested.");
 });

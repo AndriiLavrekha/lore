@@ -5,7 +5,7 @@ import { createServiceClient } from "@/server/grpc/clients";
 import { buildMetadata, withRepository } from "@/server/grpc/metadata";
 import { collectStream, type GrpcReadable } from "@/server/grpc/streaming";
 
-const PROBE_TIMEOUT_MS = 1_500;
+const PROBE_TIMEOUT_MS = 5_000;
 type DynamicGrpcClient = Client & Record<string, unknown>;
 type UnaryMethod<TResponse> = (
   request: unknown,

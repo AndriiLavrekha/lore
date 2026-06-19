@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import type { NextAuthOptions } from "next-auth";
 import { getToken } from "next-auth/jwt";
 import type { OAuthConfig } from "next-auth/providers/oauth";
@@ -71,6 +71,7 @@ export function buildAuthOptions(env: AuthEnv = process.env): NextAuthOptions {
             name: "OIDC",
             type: "oauth",
             issuer: parsed.AUTH_OIDC_ISSUER,
+            wellKnown: `${parsed.AUTH_OIDC_ISSUER.replace(/\/$/, "")}/.well-known/openid-configuration`,
             idToken: true,
             checks: ["pkce", "state"],
             clientId: parsed.AUTH_OIDC_CLIENT_ID,
@@ -126,9 +127,11 @@ export async function getServerOidcAccessToken(env: AuthEnv = process.env) {
   }
 
   const headerStore = await headers();
+  const cookieStore = await cookies();
   const token = await getToken({
     req: {
-      headers: Object.fromEntries(headerStore.entries()),
+      cookies: cookieStore,
+      headers: headerStore,
     } as never,
     secret,
   });
