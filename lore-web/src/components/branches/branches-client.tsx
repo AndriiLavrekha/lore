@@ -63,23 +63,28 @@ export function BranchesClient({ repoId }: { repoId: string }) {
     [branches, includeDeleted],
   );
 
+  async function loadBranches() {
+    const params = new URLSearchParams();
+    if (includeDeleted) params.set("include_deleted", "true");
+    if (creator.trim()) params.set("creator", creator.trim());
+    const payload = await readJson<ApiList>(
+      await fetch(`/api/repositories/${repoId}/branches?${params.toString()}`, { cache: "no-store" }),
+    );
+    const next = payload.items ?? [];
+    setBranches(next);
+    const nextSelected = next.find((branch) => branch.id === selected?.id) ?? next[0];
+    setSelected(nextSelected);
+    if (nextSelected) {
+      setForkBranchId((current) => current || nextSelected.id);
+      setForkRevision((current) => (current === ZERO_HASH ? nextSelected.latest || ZERO_HASH : current));
+    }
+    return next;
+  }
+
   async function refresh() {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (includeDeleted) params.set("include_deleted", "true");
-      if (creator.trim()) params.set("creator", creator.trim());
-      const payload = await readJson<ApiList>(
-        await fetch(`/api/repositories/${repoId}/branches?${params.toString()}`, { cache: "no-store" }),
-      );
-      const next = payload.items ?? [];
-      setBranches(next);
-      const nextSelected = next.find((branch) => branch.id === selected?.id) ?? next[0];
-      setSelected(nextSelected);
-      if (nextSelected) {
-        setForkBranchId((current) => current || nextSelected.id);
-        setForkRevision((current) => (current === ZERO_HASH ? nextSelected.latest || ZERO_HASH : current));
-      }
+      const next = await loadBranches();
       setState({
         tone: "success",
         message: next.length ? `Loaded ${next.length} branches.` : "Loaded an empty branch list.",
@@ -171,8 +176,8 @@ export function BranchesClient({ repoId }: { repoId: string }) {
           body: JSON.stringify({ revisionSignature: pushRevision.trim(), force: false, fastForwardMerge: false }),
         }),
       );
+      await loadBranches();
       setState({ tone: "success", message: `Pushed revision to ${selected.name}.` });
-      await refresh();
     } catch (error) {
       setState({ tone: "error", message: error instanceof Error ? error.message : "Branch push failed." });
     } finally {
