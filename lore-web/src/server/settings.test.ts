@@ -31,4 +31,13 @@ describe("settings schemas", () => {
       }),
     ).not.toHaveProperty("bearerToken");
   });
+
+  it("accepts explicit bearer token clearing without requiring a token value", () => {
+    const request = settingsRequestSchema.parse({
+      clearBearerToken: true,
+    });
+
+    expect(request.clearBearerToken).toBe(true);
+    expect(request.bearerToken).toBeUndefined();
+  });
 });

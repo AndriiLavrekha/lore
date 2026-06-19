@@ -1,13 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { getOidcRuntimeStatus } from "@/server/auth";
-import { getServerConfig } from "@/server/config";
-import {
-  SETTINGS_COOKIE_NAMES,
-  settingsRequestSchema,
-  settingsResponseSchema,
-} from "@/server/settings";
+import { readSessionSettingsResponse } from "@/server/session-settings";
+import { SETTINGS_COOKIE_NAMES, settingsRequestSchema } from "@/server/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -18,35 +13,8 @@ const cookieOptions = {
   path: "/",
 };
 
-async function readSettingsResponse() {
-  const cookieStore = await cookies();
-  const config = getServerConfig({
-    ...process.env,
-    LORE_WEB_GRPC_TARGET:
-      cookieStore.get(SETTINGS_COOKIE_NAMES.grpcTarget)?.value ??
-      process.env.LORE_WEB_GRPC_TARGET,
-    LORE_WEB_HTTP_BASE:
-      cookieStore.get(SETTINGS_COOKIE_NAMES.httpBase)?.value ?? process.env.LORE_WEB_HTTP_BASE,
-    LORE_WEB_GRPC_TLS:
-      cookieStore.get(SETTINGS_COOKIE_NAMES.grpcTls)?.value ?? process.env.LORE_WEB_GRPC_TLS,
-    LORE_WEB_GRPC_CA:
-      cookieStore.get(SETTINGS_COOKIE_NAMES.grpcCa)?.value ?? process.env.LORE_WEB_GRPC_CA,
-    LORE_WEB_AUTH_MODE:
-      cookieStore.get(SETTINGS_COOKIE_NAMES.authMode)?.value ?? process.env.LORE_WEB_AUTH_MODE,
-    LORE_WEB_NOTIFICATION_STREAM:
-      cookieStore.get(SETTINGS_COOKIE_NAMES.notificationStream)?.value ??
-      process.env.LORE_WEB_NOTIFICATION_STREAM,
-  });
-
-  return settingsResponseSchema.parse({
-    ...config,
-    hasBearerToken: Boolean(cookieStore.get(SETTINGS_COOKIE_NAMES.bearerToken)?.value),
-    oidc: getOidcRuntimeStatus(),
-  });
-}
-
 export async function GET() {
-  return NextResponse.json(await readSettingsResponse());
+  return NextResponse.json(await readSessionSettingsResponse());
 }
 
 export async function POST(request: Request) {
@@ -69,5 +37,9 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json(await readSettingsResponse());
+  if (body.clearBearerToken) {
+    cookieStore.delete(SETTINGS_COOKIE_NAMES.bearerToken);
+  }
+
+  return NextResponse.json(await readSessionSettingsResponse());
 }

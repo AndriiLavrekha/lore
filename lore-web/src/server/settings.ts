@@ -18,6 +18,7 @@ export const settingsRequestSchema = z.object({
   authMode: z.enum(["none", "bearer", "oidc"]).optional(),
   notificationStream: z.string().min(1).optional(),
   bearerToken: z.string().min(1).optional(),
+  clearBearerToken: z.boolean().optional(),
 });
 
 export const settingsResponseSchema = z.object({

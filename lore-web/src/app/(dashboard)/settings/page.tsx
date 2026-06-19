@@ -1,19 +1,11 @@
 import { PageHeader } from "@/components/page-header";
 import { SettingsClient } from "@/components/settings/settings-client";
-import { getOidcRuntimeStatus } from "@/server/auth";
-import { getServerConfig } from "@/server/config";
+import { readSessionSettingsResponse } from "@/server/session-settings";
 
 export const dynamic = "force-dynamic";
 
-export default function SettingsPage() {
-  const config = getServerConfig();
-  const oidc = getOidcRuntimeStatus();
-  const tokenForwarding =
-    config.authMode === "oidc"
-      ? oidc.tokenForwarding
-      : config.authMode === "bearer"
-        ? "bearer-cookie"
-        : "disabled";
+export default async function SettingsPage() {
+  const settings = await readSessionSettingsResponse();
 
   return (
     <>
@@ -23,16 +15,7 @@ export default function SettingsPage() {
         label="Session scoped"
       />
 
-      <SettingsClient
-        initialSettings={{
-          ...config,
-          hasBearerToken: false,
-          oidc: {
-            ...oidc,
-            tokenForwarding,
-          },
-        }}
-      />
+      <SettingsClient initialSettings={settings} />
     </>
   );
 }
