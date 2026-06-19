@@ -28,7 +28,11 @@ export function safeAuthNextPath(value: string | string[] | undefined) {
     return undefined;
   }
 
-  if (parsed.pathname === "/auth" || parsed.pathname.startsWith("/api/")) {
+  if (
+    parsed.pathname === "/auth" ||
+    parsed.pathname.startsWith("/auth/") ||
+    parsed.pathname.startsWith("/api/")
+  ) {
     return undefined;
   }
 

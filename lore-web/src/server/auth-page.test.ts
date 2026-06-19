@@ -28,19 +28,52 @@ describe("safeAuthNextPath", () => {
     expect(safeAuthNextPath("//example.test/repositories")).toBeUndefined();
     expect(safeAuthNextPath("/api/settings")).toBeUndefined();
     expect(safeAuthNextPath("/auth?next=/repositories")).toBeUndefined();
+    expect(safeAuthNextPath("/auth/")).toBeUndefined();
+    expect(safeAuthNextPath("/auth/settings")).toBeUndefined();
     expect(safeAuthNextPath(undefined)).toBeUndefined();
   });
 });
 
 describe("buildAuthPageState", () => {
   it("uses no-auth state when auth mode is none", () => {
-    expect(buildAuthPageState(baseSettings, undefined).primaryMode).toBe("none");
+    expect(buildAuthPageState(baseSettings, undefined)).toEqual({
+      primaryMode: "none",
+      nextPath: undefined,
+      oidcReady: false,
+      bearerReady: false,
+      disabled: true,
+    });
   });
 
-  it("prioritizes bearer when auth mode is bearer", () => {
-    expect(buildAuthPageState({ ...baseSettings, authMode: "bearer" }, "/repositories")).toMatchObject({
+  it("marks bearer auth not ready without a saved token", () => {
+    expect(buildAuthPageState({ ...baseSettings, authMode: "bearer" }, "/repositories")).toEqual({
       primaryMode: "bearer",
       nextPath: "/repositories",
+      oidcReady: false,
+      bearerReady: false,
+      disabled: false,
+    });
+  });
+
+  it("marks bearer auth ready with a saved token", () => {
+    expect(
+      buildAuthPageState({ ...baseSettings, authMode: "bearer", hasBearerToken: true }, "/repositories"),
+    ).toEqual({
+      primaryMode: "bearer",
+      nextPath: "/repositories",
+      oidcReady: false,
+      bearerReady: true,
+      disabled: false,
+    });
+  });
+
+  it("marks oidc auth not ready when oidc is disabled", () => {
+    expect(buildAuthPageState({ ...baseSettings, authMode: "oidc" }, undefined)).toEqual({
+      primaryMode: "oidc",
+      nextPath: undefined,
+      oidcReady: false,
+      bearerReady: false,
+      disabled: false,
     });
   });
 
@@ -59,9 +92,12 @@ describe("buildAuthPageState", () => {
         },
         undefined,
       ),
-    ).toMatchObject({
+    ).toEqual({
       primaryMode: "oidc",
+      nextPath: undefined,
       oidcReady: true,
+      bearerReady: false,
+      disabled: false,
     });
   });
 });
