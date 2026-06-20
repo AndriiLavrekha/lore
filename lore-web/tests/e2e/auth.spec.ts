@@ -63,6 +63,7 @@ test("bearer mode saves and clears a token without rendering the saved value", a
 
   await expect(page.getByRole("status")).toContainText("Bearer token saved");
   await expect(tokenInput).toHaveValue("");
+  expect(await page.content()).not.toContain("playwright-secret-token");
   await expect(page.getByText("Stored", { exact: true })).toBeVisible();
   await expect(statusTile(page, "Auth mode")).toContainText("stored bearer token can be forwarded");
   await expect(statusTile(page, "Forwarding")).toContainText("Bearer cookie");
