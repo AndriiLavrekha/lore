@@ -69,7 +69,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <nav
             aria-label="Mobile dashboard"
-            className="flex gap-1 overflow-x-auto border-t px-4 py-2 sm:px-6 lg:hidden"
+            className="grid grid-cols-2 gap-1 border-t px-4 py-2 sm:grid-cols-4 sm:px-6 lg:hidden"
           >
             {dashboardNavItems.map((item) => {
               const Icon = item.icon;
@@ -78,10 +78,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md px-3 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  className="inline-flex h-9 min-w-0 items-center justify-center gap-2 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
                 >
                   <Icon aria-hidden="true" className="size-4" />
-                  {item.label}
+                  <span className="truncate">{item.label}</span>
                 </Link>
               );
             })}
