@@ -509,7 +509,11 @@ function StatusTile({
 
 function DiagnosticRow({ label, value, ok }: { label: string; value: string; ok: boolean }) {
   return (
-    <div className="grid gap-1 border-t px-1 py-3 first:border-t-0 sm:grid-cols-[112px_minmax(0,1fr)]">
+    <div
+      role="group"
+      aria-label={label}
+      className="grid gap-1 border-t px-1 py-3 first:border-t-0 sm:grid-cols-[112px_minmax(0,1fr)]"
+    >
       <dt className="flex items-center gap-2 text-xs font-medium uppercase text-muted-foreground">
         <StatusIcon ok={ok} />
         {label}

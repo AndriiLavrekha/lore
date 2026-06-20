@@ -100,7 +100,7 @@ function statusTile(page: Page, label: string): Locator {
 }
 
 function oidcRow(page: Page, label: string) {
-  return page.locator("dl div").filter({ hasText: new RegExp(`^${label}`) }).first();
+  return page.getByRole("group", { name: label });
 }
 
 function oidcPanel(page: Page) {
