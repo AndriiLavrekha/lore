@@ -501,7 +501,7 @@ async function expectCapability(page: Page, label: string, value: string) {
 }
 
 function statusTile(page: Page, label: string) {
-  return page.locator("div").filter({ hasText: new RegExp(`^${label}`) }).first();
+  return page.getByRole("group", { name: label });
 }
 
 function oidcRow(page: Page, label: string) {
@@ -509,7 +509,7 @@ function oidcRow(page: Page, label: string) {
 }
 
 function oidcPanel(page: Page) {
-  return page.locator("div.rounded-md").filter({ has: page.getByText("OIDC", { exact: true }) }).last();
+  return page.getByRole("group", { name: "OIDC" });
 }
 
 async function apiJson<T>(page: Page, url: string): Promise<T> {

@@ -1,21 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 type AuthMode = "none" | "bearer" | "oidc";
-
-type SettingsPayload = {
-  grpcTarget: string;
-  httpBase: string;
-  grpcTls: "insecure" | "tls";
-  authMode: AuthMode;
-  notificationStream: string;
-  hasBearerToken: boolean;
-  oidc: {
-    enabled: boolean;
-    missing: string[];
-    callbackUrl: string;
-    tokenForwarding: "disabled" | "bearer-cookie" | "oidc-access-token";
-  };
-};
 
 test("no-auth mode renders disabled auth state and disabled OIDC sign-in when provider config is missing", async ({
   page,
@@ -32,23 +17,7 @@ test("no-auth mode renders disabled auth state and disabled OIDC sign-in when pr
 });
 
 test("bearer mode saves and clears a token without rendering the saved value", async ({ page }) => {
-  const posts: unknown[] = [];
-  await page.route("**/api/settings", async (route) => {
-    if (route.request().method() !== "POST") {
-      await route.continue();
-      return;
-    }
-
-    const body = route.request().postDataJSON() as Record<string, unknown>;
-    posts.push(body);
-
-    await route.fulfill({
-      json:
-        body.clearBearerToken === true
-          ? settingsPayload({ authMode: "bearer", hasBearerToken: false })
-          : settingsPayload({ authMode: "bearer", hasBearerToken: true }),
-    });
-  });
+  const rawToken = "playwright-secret-token";
 
   await setAuthMode(page, "bearer");
   await page.goto("/auth");
@@ -58,16 +27,25 @@ test("bearer mode saves and clears a token without rendering the saved value", a
   await expect(page.getByText("Not stored", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Clear bearer" })).toBeDisabled();
 
-  await tokenInput.fill("playwright-secret-token");
+  await tokenInput.fill(rawToken);
   await page.getByRole("button", { name: "Save bearer" }).click();
 
   await expect(page.getByRole("status")).toContainText("Bearer token saved");
   await expect(tokenInput).toHaveValue("");
-  expect(await page.content()).not.toContain("playwright-secret-token");
   await expect(page.getByText("Stored", { exact: true })).toBeVisible();
   await expect(statusTile(page, "Auth mode")).toContainText("stored bearer token can be forwarded");
   await expect(statusTile(page, "Forwarding")).toContainText("Bearer cookie");
+  await expect(statusTile(page, "Forwarding")).toContainText("Stored bearer token will be forwarded");
   await expect(page.getByRole("button", { name: "Clear bearer" })).toBeEnabled();
+  await expectRawTokenAbsentFromDom(page, rawToken);
+
+  await page.reload();
+
+  await expect(page.getByText("Stored", { exact: true })).toBeVisible();
+  await expect(statusTile(page, "Auth mode")).toContainText("stored bearer token can be forwarded");
+  await expect(statusTile(page, "Forwarding")).toContainText("Bearer cookie");
+  await expect(statusTile(page, "Forwarding")).toContainText("Stored bearer token will be forwarded");
+  await expectRawTokenAbsentFromDom(page, rawToken);
 
   await page.getByRole("button", { name: "Clear bearer" }).click();
 
@@ -77,11 +55,15 @@ test("bearer mode saves and clears a token without rendering the saved value", a
   await expect(statusTile(page, "Auth mode")).toContainText("save a bearer token");
   await expect(statusTile(page, "Forwarding")).toContainText("Bearer cookie");
   await expect(page.getByRole("button", { name: "Clear bearer" })).toBeDisabled();
+  await expectRawTokenAbsentFromDom(page, rawToken);
 
-  expect(posts).toHaveLength(2);
-  expect(posts[0]).toMatchObject({ authMode: "bearer" });
-  expect(posts[0]).toHaveProperty("bearerToken");
-  expect(posts[1]).toEqual({ clearBearerToken: true });
+  await page.reload();
+
+  await expect(page.getByText("Not stored", { exact: true })).toBeVisible();
+  await expect(statusTile(page, "Auth mode")).toContainText("save a bearer token");
+  await expect(statusTile(page, "Forwarding")).toContainText("Bearer cookie");
+  await expect(page.getByRole("button", { name: "Clear bearer" })).toBeDisabled();
+  await expectRawTokenAbsentFromDom(page, rawToken);
 });
 
 test("OIDC mode with missing config disables sign-in and preserves a safe Continue link", async ({
@@ -113,8 +95,8 @@ async function setAuthMode(page: Page, authMode: AuthMode) {
   ]);
 }
 
-function statusTile(page: Page, label: string) {
-  return page.locator("div").filter({ hasText: new RegExp(`^${label}`) }).first();
+function statusTile(page: Page, label: string): Locator {
+  return page.getByRole("group", { name: label });
 }
 
 function oidcRow(page: Page, label: string) {
@@ -122,28 +104,10 @@ function oidcRow(page: Page, label: string) {
 }
 
 function oidcPanel(page: Page) {
-  return page.locator("div.rounded-md").filter({ has: page.getByText("OIDC", { exact: true }) }).last();
+  return page.getByRole("group", { name: "OIDC" });
 }
 
-function settingsPayload({
-  authMode,
-  hasBearerToken,
-}: {
-  authMode: AuthMode;
-  hasBearerToken: boolean;
-}): SettingsPayload {
-  return {
-    grpcTarget: "127.0.0.1:50051",
-    httpBase: "http://127.0.0.1:50052",
-    grpcTls: "insecure",
-    authMode,
-    notificationStream: "lore.events",
-    hasBearerToken,
-    oidc: {
-      enabled: false,
-      missing: ["AUTH_SECRET", "AUTH_OIDC_ISSUER"],
-      callbackUrl: "http://127.0.0.1:3000/api/auth/callback/oidc",
-      tokenForwarding: authMode === "bearer" && hasBearerToken ? "bearer-cookie" : "disabled",
-    },
-  };
+async function expectRawTokenAbsentFromDom(page: Page, rawToken: string) {
+  expect(await page.content()).not.toContain(rawToken);
+  await expect(page.locator("body")).not.toContainText(rawToken);
 }

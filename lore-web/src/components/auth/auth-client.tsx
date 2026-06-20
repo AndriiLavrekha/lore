@@ -496,7 +496,7 @@ function StatusTile({
   ok: boolean;
 }) {
   return (
-    <div className="rounded-md bg-muted/35 p-3">
+    <div role="group" aria-label={label} className="rounded-md bg-muted/35 p-3">
       <div className="flex items-center gap-2">
         <StatusIcon ok={ok} />
         <span className="text-xs font-medium uppercase text-muted-foreground">{label}</span>
@@ -533,7 +533,7 @@ function DiagnosticPanel({
   ok: boolean;
 }) {
   return (
-    <div className="rounded-md bg-muted/35 p-3">
+    <div role="group" aria-label={label} className="rounded-md bg-muted/35 p-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           {icon}
