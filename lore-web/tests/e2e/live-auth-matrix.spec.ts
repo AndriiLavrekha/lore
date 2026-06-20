@@ -95,12 +95,30 @@ test("oidc mode logs in through NextAuth and forwards the issued Lore access tok
         await expect(page.getByRole("row", { name: /OIDC missing none server-only/ })).toBeVisible();
         await expect(page.getByRole("row", { name: /Token forwarding oidc-access-token/ })).toBeVisible();
 
+        await page.goto(`${baseUrl}/auth?next=/repositories`);
+        await expect(page.getByRole("heading", { name: "Auth", exact: true })).toBeVisible();
+        await expect(statusTile(page, "Auth mode")).toContainText("sign in before requests can forward credentials");
+        await expect(oidcRow(page, "Readiness")).toContainText("Ready");
+        await expect(oidcPanel(page)).toContainText("Provider ready");
+        await expect(oidcRow(page, "Access token")).toContainText("Not available");
+        await expect(page.getByRole("link", { name: "Continue" })).toHaveAttribute("href", "/repositories");
+
         await page.goto(`${baseUrl}/overview`);
         await expectCapability(page, "Auth state", "missing-token");
 
         await signInWithOidc(page, baseUrl);
         const session = await apiJson<{ hasAccessToken?: boolean }>(page, "/api/auth/session");
         expect(session.hasAccessToken).toBe(true);
+
+        await page.goto(`${baseUrl}/auth?next=/repositories`);
+        await expect(page.getByRole("heading", { name: "Auth", exact: true })).toBeVisible();
+        await expect(oidcRow(page, "Readiness")).toContainText("Ready");
+        await expect(oidcRow(page, "Access token")).toContainText("Available");
+        await expect(statusTile(page, "Forwarding")).toContainText("OIDC access token");
+        await expect(statusTile(page, "Forwarding")).toContainText(
+          "Current OIDC access token will be forwarded with server requests.",
+        );
+        await expect(page.getByRole("link", { name: "Continue" })).toHaveAttribute("href", "/repositories");
 
         await page.goto(`${baseUrl}/overview`);
         await expectCapability(page, "Auth state", "authenticated");
@@ -480,6 +498,18 @@ async function expectCapability(page: Page, label: string, value: string) {
   await expect(card).toBeVisible({ timeout: 20_000 });
   const text = await card.textContent();
   await expect(card.getByText(value, { exact: true }), `${label} card text: ${text}`).toBeVisible({ timeout: 20_000 });
+}
+
+function statusTile(page: Page, label: string) {
+  return page.locator("div").filter({ hasText: new RegExp(`^${label}`) }).first();
+}
+
+function oidcRow(page: Page, label: string) {
+  return page.locator("dl div").filter({ hasText: new RegExp(`^${label}`) }).first();
+}
+
+function oidcPanel(page: Page) {
+  return page.locator("div.rounded-md").filter({ has: page.getByText("OIDC", { exact: true }) }).last();
 }
 
 async function apiJson<T>(page: Page, url: string): Promise<T> {
